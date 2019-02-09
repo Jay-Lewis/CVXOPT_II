@@ -2,77 +2,117 @@ import numpy as np
 import numpy.linalg as la
 from utils import *
 
-def descent(update, A, b, reg, T=int(1e4), c=1e-5):
-    # Descends using update method "update" for T steps
+class descent_structure:
+    def __init__(self, data, parameters):
+        self.data = data
+        self.parameters = parameters
 
-    x = np.zeros(A.shape[1])
-    xs = []
-    error = [la.norm(np.dot(A, x) - b)]
-    l1 = [np.sum(abs(x))]
-    for t in range(T):
-        # update A (either subgradient or frank-wolfe)
-        x = update(x, A, b, t, reg, c)
+    def descent(self, update_fn, subgrad_fn, x=None):
+        # Descends using update method "update" for T steps
+        A, b = get_args_from_dict(self.data, ('A', 'b'))
+        T = self.parameters['T']
+        if x is None:
+            x = np.zeros(A.shape[1])
+        xs = []
+        error = [la.norm(np.dot(A, x) - b)]
+        l1 = [np.sum(abs(x))]
+        for t in range(T):
+            # update A (either subgradient or frank-wolfe)
+            x = update_fn(x, t, subgrad_fn, self.data, self.parameters)
 
-        # record error and l1 norm
+            # record error and l1 norm
 
-        if (t % 1 == 0) or (t == T - 1):
-            error.append(la.norm(np.dot(A, x) - b))
-            l1.append(np.sum(abs(x)))
-            xs.append(x)
-            assert not np.isnan(error[-1])
+            if (t % 1 == 0) or (t == T - 1):
+                error.append(la.norm(np.dot(A, x) - b))
+                l1.append(np.sum(abs(x)))
+                xs.append(x)
+                assert not np.isnan(error[-1])
 
-    return x, error, l1, xs
+        return x, error, l1, xs
 
-def proximal_gradient_update(x, A, b, t, lam, beta):
+    def accelerated_descent(self, update_fn, subgrad_fn):
+        # Descends using update method "update" for T steps
+        A, b = get_args_from_dict(self.data, ('A', 'b'))
+        T = self.parameters['T']
+        x_t = np.zeros(A.shape[1])
+        y_t = np.zeros(A.shape[1])
+
+        lam_t = 0
+        xs = []
+        error = [la.norm(np.dot(A, x_t) - b)]
+        l1 = [np.sum(abs(x_t))]
+
+        for t in range(T):
+            # update A (either subgradient or frank-wolfe)
+            x_plus, y_plus, lam_plus = update_fn(x_t, y_t, lam_t, subgrad_fn, self.data, self.parameters)
+
+            x_minus = x_t
+            x_t = x_plus
+            y_t = y_plus
+            lam_t = lam_plus
+
+            # record error and l1 norm
+            if (t % 1 == 0) or (t == T - 1):
+                error.append(la.norm(np.dot(A, x_plus) - b))
+                l1.append(np.sum(abs(x_plus)))
+                xs.append(x_plus)
+                assert not np.isnan(error[-1])
+
+        return x_plus, error, l1, xs
+
+# def proximal_gradient_update(subgradient_fn, x, A, b, t, lam, beta):
+def proximal_gradient_update(x, t, subgradient_fn, data, params):
     # Updates x based on PGD
-    gradient = get_l2_subgrad(x, A, b)
+    beta, lam = get_args_from_dict(params, ('beta', 'lam'))
+    gradient = subgradient_fn(x, data, params)
     eta = 1.0/beta
     x_bar = x - eta*gradient
     x_plus = soft_thresholding(x_bar, lam, eta)
     return x_plus
 
 
-def FISTA_update(x, y, A, b, t, lam_t, beta_alpha):
+def FISTA_update(x_t, y, lam_t, subgradient_fn, data, params):
     # Updates x based on PGD with Acceleration
     # (Implemented based on Bubeck's Notes)
+    alpha, beta = get_args_from_dict(params, ('alpha', 'beta'))
+
     lam_plus = (1 + np.sqrt(1+4*lam_t**2))/2.0
-    gamma_t = (1-lam_t)/lam_plus    #TODO: figure this out?
-    gradient = get_l2_subgrad(x, A, b)
-    beta, alpha = beta_alpha
-    kappa = alpha/beta
+    gamma_t = (lam_t-1)/lam_plus
     eta = 1.0/beta
-    gamma = (np.sqrt(kappa)-1)/(np.sqrt(kappa)+1)
 
-    y_bar = x - eta*gradient
-    y_plus = soft_thresholding(y_bar, 1.0, eta)
-    # x_plus = (1-gamma_t)*y_plus + gamma_t*y
-    # x_plus = (1+gamma_t)*y_plus - gamma_t*y
-    x_plus = (1+gamma)*y_plus - gamma*y
+    gradient = subgradient_fn(y, data, params)
+    x_bar = y - eta*gradient
+    x_plus = soft_thresholding(x_bar, 1.0, eta)
+    y_plus = x_plus + gamma_t*(x_plus-x_t)
 
-    print(np.linalg.norm(y_plus, order=1))
     return x_plus, y_plus, lam_plus
 
-
-def frank_wolfe_update(x, A, b, t, gam, c):
+def frank_wolfe_update(x, t, subgradient_fn, data, params):
     # Updates x using Frank-Wolfe method for loss ==> (1/2)*||Ax-b||_2^2
     # and constraint: {x | lam*||x||_1 <= gam}
+
+    gamma = params['gamma']
     n_t = 2.0 / (t + 2.0)
 
-    neg_g_t = -1.0 * get_l2_subgrad(x, A, b)
+    neg_g_t = -1.0*subgradient_fn(x, data, params)
 
     s_t = np.zeros(np.shape(x))
     index = np.argmax(np.abs(neg_g_t))
-    s_t[index] = gam * np.sign(neg_g_t[index])
+    s_t[index] = gamma * np.sign(neg_g_t[index])
 
     x = x + n_t * (s_t - x)
 
     return x
 
 
-def frank_wolfe_update_btls(x, A, b, t, gam, c):
+def frank_wolfe_update(x, t, subgradient_fn, data, params):
     # Updates x using Frank-Wolfe method for loss ==> (1/2)*||Ax-b||_2^2
     # and constraint: {x | lam*||x||_1 <= gam}
     # (Uses BTLS)
+
+    A, b = get_args_from_dict(data, ('A', 'b'))
+    gamma = params['gamma']
+
     n_t = 1.0
     tau = 1.0/2.0
     old_loss = get_l2_loss(x, A, b)
@@ -80,10 +120,10 @@ def frank_wolfe_update_btls(x, A, b, t, gam, c):
     x_plus = x
 
     # Calculate gradient and constrained gradient
-    neg_g_t = -1.0 * get_l2_subgrad(x, A, b)
+    neg_g_t = -1.0 * subgradient_fn(x, data, params)
     s_t = np.zeros(np.shape(x))
     index = np.argmax(np.abs(neg_g_t))
-    s_t[index] = gam * np.sign(neg_g_t[index])
+    s_t[index] = gamma * np.sign(neg_g_t[index])
 
     # BTLS Loop
     while new_loss > old_loss - 1/2*n_t*np.dot(neg_g_t.T, (s_t-x)):
@@ -95,20 +135,37 @@ def frank_wolfe_update_btls(x, A, b, t, gam, c):
     return x_plus
 
 
-def subgradient_update(x, A, b, t, lam, c=1e-5):
+def subgradient_update(x, t, subgradient_fn, data, params):
     # Updates x using subgradient descent using loss ==> (1/2)*||Ax-b||_2^2 + lam*||x||_1
+    c = params['c']
     n_t = c / np.sqrt(t + 1)
 
-    subgrad = get_l2_subgrad(x, A, b) + lam * get_l1_subgrad(x)
+    subgrad = subgradient_fn(x, data, params)
+    # subgrad = get_l2_subgrad(x, A, b) + lam * get_l1_subgrad(x)
 
     x = x - n_t * subgrad
 
     return x
 
+def accelerated_subgrad_update(x_t, y, lam_t, subgradient_fn, data, params):
+    # Updates x based on SubGrad with Nesterov Acceleration
+    alpha, beta = get_args_from_dict(params, ('alpha', 'beta'))
 
-def subgradient_update_btls(x, A, b, t, lam, c):
+    eta = 1.0/beta
+    kappa = alpha/beta
+    gamma = (1-np.sqrt(kappa))/(np.sqrt(kappa)+1)
+
+    gradient = subgradient_fn(y, data, params)
+    x_plus = y - eta*gradient
+    y_plus = x_plus + gamma*(x_plus-x_t)
+
+    return x_plus, y_plus, None
+
+def subgradient_update_btls(x, t, subgradient_fn, data, params):
     # Updates x using subgradient descent using loss ==> (1/2)*||Ax-b||_2^2 + lam*||x||_1
     # (Uses BTLS)
+    A, b = get_args_from_dict(data, ('A', 'b'))
+    lam = params['lam']
     ticks = 0
     n_t = 1.0
     tau = 0.75
@@ -129,31 +186,3 @@ def subgradient_update_btls(x, A, b, t, lam, c):
         ticks = ticks + 1
 
     return x_plus
-
-
-
-def accelerated_descent(update, A, b, reg, T=int(1e4), c=1e-5):
-    # Descends using update method "update" for T steps
-
-    x_t = np.zeros(A.shape[1])
-    y_t = np.zeros(A.shape[1])
-    lam_t = 0
-    xs = []
-    error = [la.norm(np.dot(A, x_t) - b)]
-    l1 = [np.sum(abs(x_t))]
-    for t in range(T):
-        # update A (either subgradient or frank-wolfe)
-        x_t1, y_t1, lam_t1 = update(x_t, y_t, A, b, t, lam_t, c)
-
-        x_t = x_t1
-        y_t = y_t1
-        lam_t = lam_t1
-        # record error and l1 norm
-
-        if (t % 1 == 0) or (t == T - 1):
-            error.append(la.norm(np.dot(A, x_t1) - b))
-            l1.append(np.sum(abs(x_t1)))
-            xs.append(x_t1)
-            assert not np.isnan(error[-1])
-
-    return x_t1, error, l1, xs

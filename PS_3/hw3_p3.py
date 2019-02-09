@@ -4,7 +4,7 @@ import utils
 
 
 # ==========================================
-# HW 3 (Problem 2)
+# HW 3 (Problem 3)
 # ==========================================
 
 # --------------------
@@ -28,8 +28,8 @@ b = np.matmul(A, x_true).reshape([-1,])
 # Set up Descent Structure
 T = int(1e3)
 alpha, beta = utils.get_alpha_beta(A)
-data = get_args_dict(('A', 'b'), (A, b))
-parameters = get_args_dict(('alpha', 'beta', 'lam', 'T', 'c'), (alpha, beta, 1.0, T, 1e-5))
+data = utils.get_args_dict(('A', 'b'), (A, b))
+parameters = utils.get_args_dict(('alpha', 'beta', 'lam', 'T', 'c'), (alpha, beta, 1.0, T, 1e-5))
 gd = descent_structure(data, parameters)
 
 fig1 = plt.figure()
@@ -43,7 +43,7 @@ for i in range(0, 3):
     x_random = np.random.randn
     subgrad_fn = utils.get_l2_subgrad
     x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn, )
-    test_errors_sg = test_error(xs_sg, A, b)
+    test_errors_sg = utils.test_error(xs_sg, A, b)
 
 
     # Logistic Regression using accelerated subgradient method

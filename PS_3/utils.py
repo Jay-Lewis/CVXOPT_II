@@ -10,17 +10,7 @@ def soft_thresholding(x, lam, step):
 
 def get_l1_subgrad(x, data, params):
     # Returns subgradient for l1 loss ==> ||x||_1
-    l1_subgrad = np.empty([0, ])
-
-    for element in x:
-        if element == 0.0:
-            # l1_subgrad.append(np.random.uniform(-1.0, 1.0))
-            l1_subgrad = np.append(l1_subgrad, 0.0)
-
-        else:
-            l1_subgrad = np.append(l1_subgrad, np.sign(element))
-
-    return l1_subgrad
+    return np.sign(x)
 
 
 def get_l2_subgrad(x, data, params):
@@ -28,6 +18,28 @@ def get_l2_subgrad(x, data, params):
     A, b = get_args_from_dict(data, ('A', 'b'))
 
     return np.matmul(np.transpose(A), np.matmul(A, x) - b)
+
+def get_logist_subgrad(x, data, params):
+    # Returns subgradient for log. loss ==> log(sum_i(exp(ai^T*x-bi)))
+    A, b = get_args_from_dict(data, ('A', 'b'))
+
+    A_x = np.matmul(A, x)
+    sum1 = 0; sum2 = 0
+    n = np.size(x)
+    subgrad = np.zeros([1, n])
+    for j in range(0, n):
+        print(j)
+        for i, (inner_prod, b_i) in enumerate(zip(A_x,b)):
+            print(inner_prod)
+            print(b[i])
+            a_j = A[i, j]
+            print(a_j)
+            sum1 += np.exp(inner_prod-b[i])
+            sum2 += np.exp(inner_prod-b)*a_j
+        subgrad[j] = sum2/sum1
+
+    print(subgrad)
+    return subgrad
 
 def get_LASSO_subgrad(x, data, params):
     A, b = get_args_from_dict(data, ('A', 'b'))

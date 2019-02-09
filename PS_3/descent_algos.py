@@ -7,7 +7,7 @@ class descent_structure:
         self.data = data
         self.parameters = parameters
 
-    def descent(self, update_fn, subgrad_fn, x=None):
+    def descent(self, update_fn, subgrad_fn, error_fn, , x=None):
         # Descends using update method "update" for T steps
         A, b = get_args_from_dict(self.data, ('A', 'b'))
         T = self.parameters['T']

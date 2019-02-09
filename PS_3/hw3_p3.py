@@ -18,7 +18,7 @@ import utils
 m = 1000
 n = 500
 A = np.random.randn(m, n)
-x_true = np.random.randn(n, 1)
+x_true = np.random.randn(n,)
 b = np.matmul(A, x_true).reshape([-1,])
 
 # ---------------------------
@@ -41,7 +41,7 @@ for i in range(0, 3):
     # np.random.seed(i)
     # Logistic Regression using subgradient method
     x_random = np.random.randn
-    subgrad_fn = utils.get_l2_subgrad
+    subgrad_fn = utils.get_logist_subgrad
     x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn, )
     test_errors_sg = utils.test_error(xs_sg, A, b)
 

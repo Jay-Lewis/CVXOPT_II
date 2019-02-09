@@ -18,7 +18,7 @@ np.random.seed(1)
 m = 3000
 n = 1500
 A = np.random.randn(m, n)
-x_true = np.random.randn(n, 1)
+x_true = np.random.randn(n,)
 b = np.matmul(A, x_true).reshape([-1,])
 
 # ---------------------------
@@ -39,14 +39,16 @@ x_pgd, error_pgd, l1_pgd, xs_pgd = gd.descent(proximal_gradient_update, subgrad_
 test_errors_pgd = test_error(xs_pgd, A, b)
 
 
-# LASSO using subgradient method
-x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn)
-test_errors_sg = test_error(xs_sg, A, b)
-
-
 # LASSO using FISTA
 ab_tuple = (alpha, beta)
 x_F, error_F, l1_F, xs_F = gd.accelerated_descent(FISTA_update, subgrad_fn)
+
+
+# LASSO using subgradient method
+subgrad_fn = utils.get_LASSO_subgrad
+x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn)
+test_errors_sg = test_error(xs_sg, A, b)
+
 
 
 # ---------------------------

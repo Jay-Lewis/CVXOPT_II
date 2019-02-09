@@ -89,7 +89,6 @@ def get_l1_subgrad(x):
 
 def get_l2_subgrad(x, A, b):
     # Returns subgradient for l2 loss ==> (1/2)*||Ax-b||_2^2
-
     return np.matmul(np.transpose(A), np.matmul(A, x) - b)
 
 def descent(update, A, b, reg, T=int(1e4), c=1e-5):

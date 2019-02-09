@@ -8,7 +8,7 @@ def soft_thresholding(x, lam, step):
     return x_
 
 
-def get_l1_subgrad(x, data, params):
+def get_l1_subgrad(x, data=None, params=None):
     # Returns subgradient for l1 loss ==> ||x||_1
     return np.sign(x)
 
@@ -19,6 +19,7 @@ def get_l2_subgrad(x, data, params):
 
     return np.matmul(np.transpose(A), np.matmul(A, x) - b)
 
+
 def get_logist_subgrad(x, data, params):
     # Returns subgradient for log. loss ==> log(sum_i(exp(ai^T*x-bi)))
     A, b = get_args_from_dict(data, ('A', 'b'))
@@ -27,29 +28,38 @@ def get_logist_subgrad(x, data, params):
     sum1 = 0; sum2 = 0
     n = np.size(x)
     subgrad = np.zeros([1, n])
-    for j in range(0, n):
-        print(j)
-        for i, (inner_prod, b_i) in enumerate(zip(A_x,b)):
-            print(inner_prod)
-            print(b[i])
-            a_j = A[i, j]
-            print(a_j)
-            sum1 += np.exp(inner_prod-b[i])
-            sum2 += np.exp(inner_prod-b)*a_j
-        subgrad[j] = sum2/sum1
 
-    print(subgrad)
+    for j in range(0, n):
+        for i, (inner_prod, b_i) in enumerate(zip(A_x, b)):
+            a_j = A[i, j]
+            sum1 += np.exp(inner_prod+b_i)
+            sum2 += np.exp(inner_prod+b_i)*a_j
+
+        subgrad[0, j] = sum2/sum1
+
     return subgrad
+
 
 def get_LASSO_subgrad(x, data, params):
-    A, b = get_args_from_dict(data, ('A', 'b'))
     lam = params['lam']
-    subgrad = get_l2_subgrad(x, A, b) + lam * get_l1_subgrad(x)
+    subgrad = get_l2_subgrad(x, data, params) + lam * get_l1_subgrad(x)
     return subgrad
+
 
 def get_l2_loss(x, A, b):
     norm = np.linalg.norm(np.matmul(A, x) - b)
     return norm
+
+
+def get_logist_loss(x, A, b):
+    sum = 0
+    A_x = np.matmul(A, x)
+
+    for inner_prod, b_i in zip(A_x, b):
+        sum += np.exp(inner_prod+b_i)
+
+    loss = np.log(sum)
+    return loss
 
 
 def test_error(xs, A, b):
@@ -70,8 +80,10 @@ def get_alpha_beta(A):
 
 def get_args_from_dict(args_dict, kw_list):
     args = ()
+
     for kw in kw_list:
         args += (args_dict[kw],)
+
     return args
 
 

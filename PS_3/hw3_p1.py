@@ -18,6 +18,7 @@ A_train = np.load("A_train.npy")
 b_train = np.load("b_train.npy")
 A_test = np.load("A_test.npy")
 b_test = np.load("b_test.npy")
+x_start = np.zeros(A_train.shape[1])
 
 # ---------------------------
 # Run Descent Algos on LASSO
@@ -28,27 +29,29 @@ b_test = np.load("b_test.npy")
 T = int(1e2)
 alpha, beta = utils.get_alpha_beta(A_train)
 data = get_args_dict(('A', 'b'), (A_train, b_train))
-parameters = get_args_dict(('beta', 'lam', 'T', 'c'), (beta, 1.0, T, 1e-5))
-gd = descent_structure(data, parameters)
+params = get_args_dict(('beta', 'lam', 'T', 'c'), (beta, 1.0, T, 1e-5))
+gd = descent_structure(data, params)
 
 
 # LASSO using Proximal Gradient Descent
+error_fn = utils.get_l2_loss
+norm_fn = utils.get_l1_loss
 subgrad_fn = utils.get_l2_subgrad
-x_pgd, error_pgd, l1_pgd, xs_pgd = gd.descent(proximal_gradient_update, subgrad_fn)
-test_errors_pgd = test_error(xs_pgd, A_test, b_test)
+x_pgd, error_pgd, l1_pgd, xs_pgd = gd.descent(proximal_gradient_update, subgrad_fn, error_fn, norm_fn, x_start)
+test_errors_pgd = test_error(xs_pgd, data, params)
 
 
 
 # LASSO using subgradient method
-x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn)
-test_errors_sg = test_error(xs_sg, A_test, b_test)
+x_sg, error_sg, l1_sg, xs_sg = gd.descent(subgradient_update, subgrad_fn, error_fn, norm_fn, x_start)
+test_errors_sg = test_error(xs_sg, data, params)
 norm_star = l1_sg[-1]
 
 
 # LASSO using FW methods
 gd.parameters['gamma'] = norm_star
-x_fw, error_fw, l1_fw, xs_fw = gd.descent(frank_wolfe_update, subgrad_fn)
-test_errors_fw = test_error(xs_fw, A_test, b_test)
+x_fw, error_fw, l1_fw, xs_fw = gd.descent(frank_wolfe_update, subgrad_fn, error_fn, norm_fn, x_start)
+test_errors_fw = test_error(xs_fw, data, params)
 
 
 

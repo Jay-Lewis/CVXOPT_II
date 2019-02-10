@@ -4,7 +4,7 @@ import utils
 
 
 # ==========================================
-# HW 3 (Problem 3)
+# HW 3 (Problem 4)
 # ==========================================
 
 # --------------------
@@ -31,7 +31,7 @@ alpha, beta = utils.get_alpha_beta(A)
 data = utils.get_args_dict(('A', 'b'), (A, b))
 parameters = utils.get_args_dict(('alpha', 'beta', 'T'), (alpha, beta, T))
 gd = descent_structure(data, parameters)
-error_fn = utils.get_prob3_loss
+error_fn = utils.get_logist_loss
 norm_fn = utils.get_l1_loss
 
 fig1 = plt.figure()
@@ -45,7 +45,8 @@ for i in range(0, 3):
     print('------------ Log. Reg. ---------------------')
     # Logistic Regression using subgradient method
     x_start = np.random.randn(n,)
-    subgrad_fn = utils.get_prob3_subgrad
+    subgrad_fn = utils.get_logist_subgrad
+    # subgrad_fn = utils.get_l2_subgrad
     x_sg, error_sg, l1_sg, xs_sg =\
         gd.descent(subgradient_update, subgrad_fn, error_fn, norm_fn, x_start)
 

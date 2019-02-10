@@ -7,15 +7,14 @@ class descent_structure:
         self.data = data
         self.parameters = parameters
 
-    def descent(self, update_fn, subgrad_fn, error_fn, , x=None):
+    def descent(self, update_fn, subgrad_fn, error_fn, norm_fn, x_start):
         # Descends using update method "update" for T steps
-        A, b = get_args_from_dict(self.data, ('A', 'b'))
         T = self.parameters['T']
-        if x is None:
-            x = np.zeros(A.shape[1])
+        x = x_start
         xs = []
-        error = [la.norm(np.dot(A, x) - b)]
-        l1 = [np.sum(abs(x))]
+        error = [error_fn(x, self.data, self.parameters)]
+        norm = [norm_fn(x, self.data, self.parameters)]
+
         for t in range(T):
             # update A (either subgradient or frank-wolfe)
             x = update_fn(x, t, subgrad_fn, self.data, self.parameters)
@@ -23,24 +22,23 @@ class descent_structure:
             # record error and l1 norm
 
             if (t % 1 == 0) or (t == T - 1):
-                error.append(la.norm(np.dot(A, x) - b))
-                l1.append(np.sum(abs(x)))
+                error.append(error_fn(x, self.data, self.parameters))
+                norm.append(norm_fn(x, self.data, self.parameters))
                 xs.append(x)
                 assert not np.isnan(error[-1])
 
-        return x, error, l1, xs
+        return x, error, norm, xs
 
-    def accelerated_descent(self, update_fn, subgrad_fn):
+    def accelerated_descent(self, update_fn, subgrad_fn, error_fn, norm_fn, x_start):
         # Descends using update method "update" for T steps
-        A, b = get_args_from_dict(self.data, ('A', 'b'))
         T = self.parameters['T']
-        x_t = np.zeros(A.shape[1])
-        y_t = np.zeros(A.shape[1])
+        x_t = x_start
+        y_t = x_start
 
         lam_t = 0
         xs = []
-        error = [la.norm(np.dot(A, x_t) - b)]
-        l1 = [np.sum(abs(x_t))]
+        error = [error_fn(x_start, self.data, self.parameters)]
+        norm = [norm_fn(x_start, self.data, self.parameters)]
 
         for t in range(T):
             # update A (either subgradient or frank-wolfe)
@@ -53,12 +51,12 @@ class descent_structure:
 
             # record error and l1 norm
             if (t % 1 == 0) or (t == T - 1):
-                error.append(la.norm(np.dot(A, x_plus) - b))
-                l1.append(np.sum(abs(x_plus)))
+                error.append(error_fn(x_plus, self.data, self.parameters))
+                norm.append(norm_fn(x_plus, self.data, self.parameters))
                 xs.append(x_plus)
                 assert not np.isnan(error[-1])
 
-        return x_plus, error, l1, xs
+        return x_plus, error, norm, xs
 
 # def proximal_gradient_update(subgradient_fn, x, A, b, t, lam, beta):
 def proximal_gradient_update(x, t, subgradient_fn, data, params):
@@ -110,12 +108,11 @@ def frank_wolfe_update(x, t, subgradient_fn, data, params):
     # and constraint: {x | lam*||x||_1 <= gam}
     # (Uses BTLS)
 
-    A, b = get_args_from_dict(data, ('A', 'b'))
     gamma = params['gamma']
 
     n_t = 1.0
     tau = 1.0/2.0
-    old_loss = get_l2_loss(x, A, b)
+    old_loss = get_l2_loss(x, data, params)
     new_loss = old_loss + 1.0
     x_plus = x
 
@@ -128,7 +125,7 @@ def frank_wolfe_update(x, t, subgradient_fn, data, params):
     # BTLS Loop
     while new_loss > old_loss - 1/2*n_t*np.dot(neg_g_t.T, (s_t-x)):
         x_plus = x + n_t*(s_t-x)
-        new_loss = get_l2_loss(x_plus, A, b)
+        new_loss = get_l2_loss(x_plus, data, params)
 
         n_t = n_t*tau
 
@@ -137,11 +134,14 @@ def frank_wolfe_update(x, t, subgradient_fn, data, params):
 
 def subgradient_update(x, t, subgradient_fn, data, params):
     # Updates x using subgradient descent using loss ==> (1/2)*||Ax-b||_2^2 + lam*||x||_1
-    c = params['c']
-    n_t = c / np.sqrt(t + 1)
+
+    if 'c' in params:
+        c = params['c']
+        n_t = c / np.sqrt(t + 1)
+    else:
+        n_t = 1.0 / params['beta']
 
     subgrad = subgradient_fn(x, data, params)
-    # subgrad = get_l2_subgrad(x, A, b) + lam * get_l1_subgrad(x)
 
     x = x - n_t * subgrad
 

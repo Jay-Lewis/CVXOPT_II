@@ -18,14 +18,13 @@ np.random.seed(1)
 # Load Data
 # --------------------
 print('============= Loading Data ==============')
-nrows = 5000
+nrows = 7000
 df = pd.read_csv("Bigdata/X_train.csv", header=-1, nrows=nrows)
 df2 = pd.read_csv("Bigdata/y_train.csv", header=-1)
 X_train = df.as_matrix()
 y_train = df2.as_matrix()
 print('=============  Data Loaded ==============')
 
-#TODO: run on full thing but for now small thing
 X_train = X_train[:, :].T
 y_train = y_train[0, 0:nrows]
 n, N = np.shape(X_train)
@@ -35,24 +34,16 @@ print(y_train.shape)
 print(X_train.shape)
 
 
-# =====================
-# Simple Example
-# =====================
-
-# num_c = 5   # TODO:
-# X_train = np.random.randn(80, 100)
-# y_train = np.random.randint(0, num_c-1, [100,])
-# n, N = np.shape(X_train)
-
 # ---------------------------
 # Run Descent Algos on Log. Reg.
 # ---------------------------
 
 # Set up Descent Structure
-T = int(1e4)
+T = int(1e3)
+mu = 1e-2
 alpha, beta = utils.get_alpha_beta(X_train)
 data = utils.get_args_dict(('X', 'y'), (X_train, y_train))
-parameters = utils.get_args_dict(('alpha', 'beta', 'T'), (alpha, beta, T))
+parameters = utils.get_args_dict(('alpha', 'beta', 'T', 'mu'), (alpha, beta, T, mu))
 gd = descent_structure(data, parameters)
 error_fn = utils.get_logist_loss
 norm_fn = utils.get_logist_subgrad

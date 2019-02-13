@@ -25,7 +25,7 @@ def get_LASSO_subgrad(x, data, params):
 
 def get_logist_subgrad(Beta, data, params):
     X, y = get_args_from_dict(data, ('X', 'y'))
-
+    mu = params['mu']
     num_c = Beta.shape[1]
     subgrad = np.zeros(np.shape(Beta))
 
@@ -41,7 +41,7 @@ def get_logist_subgrad(Beta, data, params):
             else:
                 subgrad[:, k] += (-exp_vect[k]/norm_factor)*x_i
 
-    # TODO: add L2 regularization
+    subgrad = subgrad + 2*mu*Beta
 
     return subgrad
 

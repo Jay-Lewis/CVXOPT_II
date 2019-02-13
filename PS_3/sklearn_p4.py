@@ -21,7 +21,7 @@ np.random.seed(1)
 # Load Data
 # --------------------
 print('============= Loading Data ==============')
-nrows = 20000
+nrows = 15000
 df = pd.read_csv("Bigdata/X_train.csv", header=-1, nrows=nrows)
 df2 = pd.read_csv("Bigdata/y_train.csv", header=-1)
 X_train = df.as_matrix()
@@ -47,15 +47,15 @@ print('------------ Log. Reg. ---------------------')
 # Logistic Regression using subgradient method
 Beta_start = np.random.randn(n, num_c)
 T = 10
-num_pts = 7
+num_pts = 5
 
-clf = LogisticRegression(random_state=0, solver='lbfgs', multi_class='multinomial', verbose=0)
-filename = 'p4/mu_sweep_subgrad.pdf'
-skutils.plot_loss_vs_reg("C", -8, 3, num_pts, clf, X_train, y_train, filename)
+# clf = LogisticRegression(random_state=0, solver='lbfgs', multi_class='multinomial', verbose=0)
+# filename = 'p4/mu_sweep_subgrad.pdf'
+# skutils.plot_loss_vs_reg("C", -8, 3, num_pts, clf, X_train, y_train, filename)
 
 print('-------- Log. Reg. + Acceleration ----------')
 # Logistic Regression using accelerated subgradient method
-clf2 = LogisticRegression(random_state=0, solver='newton-cg', multi_class='multinomial', verbose=0)
+clf2 = LogisticRegression(random_state=0, solver='newton-cg', multi_class='multinomial', verbose=0, max_iter=25)
 filename = 'p4/mu_sweep_acc_subgrad.pdf'
 skutils.plot_loss_vs_reg("C", -8, 3, num_pts, clf2, X_train, y_train, filename)
 

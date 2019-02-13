@@ -23,7 +23,8 @@ class descent_structure:
 
             if (t % 1 == 0) or (t == T - 1):
                 error.append(error_fn(x, self.data, self.parameters))
-                norm.append(norm_fn(x, self.data, self.parameters))
+                if norm_fn is not None:
+                    norm.append(norm_fn(x, self.data, self.parameters))
                 xs.append(x)
                 assert not np.isnan(error[-1])
 

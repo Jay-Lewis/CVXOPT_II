@@ -26,16 +26,22 @@ def get_LASSO_subgrad(x, data, params):
 def get_logist_subgrad(Beta, data, params):
     X, y = get_args_from_dict(data, ('X', 'y'))
 
-    N = X.shape[1]
+    num_c = Beta.shape[1]
     subgrad = np.zeros(np.shape(Beta))
 
-    
+    for i, y_i in enumerate(y):
+        x_i = X[:, i]
 
-    # for i, y_i in enumerate(y):
-    #     x_i = X[i, :]
-    #     B_i = Beta[int(y_i), :]
-    #     part1 += np.dot(B_i, x_i)
+        exp_vect = np.exp(-1.0*np.matmul(Beta.T, x_i))
+        norm_factor = np.sum(exp_vect)
 
+        for k in range(0, num_c):
+            if k == y_i:
+                subgrad[:, k] += (1.0-exp_vect[k]/norm_factor)*x_i
+            else:
+                subgrad[:, k] += (-exp_vect[k]/norm_factor)*x_i
+
+    # TODO: add L2 regularization
 
     return subgrad
 
@@ -60,8 +66,8 @@ def get_logist_loss(Beta, data, params):
     loss = 0
 
     for i, y_i in enumerate(y):
-        x_i = X[i, :]
-        B_i = Beta[int(y_i), :]
+        x_i = X[:, i]
+        B_i = Beta[:, int(y_i)]
         loss += np.dot(B_i, x_i)
 
         summ = np.sum(np.exp(-1.0*np.matmul(Beta.T, x_i)))
@@ -79,6 +85,15 @@ def soft_thresholding(x, lam, step):
     zeros = np.zeros(np.shape(x))
     x_ = np.maximum((np.abs(x)-lam*step), zeros)*np.sign(x)
     return x_
+
+def get_logistic_preds(X, Beta):
+    logits = []
+
+    for x in X.T:
+        logit = np.argmin(np.matmul(Beta.T, x))
+        logits.append(logit)
+
+    return logits
 
 
 # --------------------------

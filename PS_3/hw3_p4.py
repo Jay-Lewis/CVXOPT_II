@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from descent_algos import *
 import utils
+import pandas as pd
+import random
 
 
 # ==========================================
@@ -15,24 +17,45 @@ np.random.seed(1)
 # --------------------
 # Load Data
 # --------------------
-m = 1000
-n = 500
-A = np.random.randn(m, n)
-x_true = np.random.randn(n,)
-b = np.matmul(A, x_true).reshape([-1,])
+print('============= Loading Data ==============')
+nrows = 5000
+df = pd.read_csv("Bigdata/X_train.csv", header=-1, nrows=nrows)
+df2 = pd.read_csv("Bigdata/y_train.csv", header=-1)
+X_train = df.as_matrix()
+y_train = df2.as_matrix()
+print('=============  Data Loaded ==============')
+
+#TODO: run on full thing but for now small thing
+X_train = X_train[:, :].T
+y_train = y_train[0, 0:nrows]
+n, N = np.shape(X_train)
+num_c = 20
+
+print(y_train.shape)
+print(X_train.shape)
+
+
+# =====================
+# Simple Example
+# =====================
+
+# num_c = 5   # TODO:
+# X_train = np.random.randn(80, 100)
+# y_train = np.random.randint(0, num_c-1, [100,])
+# n, N = np.shape(X_train)
 
 # ---------------------------
-# Run Descent Algos on LASSO
+# Run Descent Algos on Log. Reg.
 # ---------------------------
 
 # Set up Descent Structure
 T = int(1e4)
-alpha, beta = utils.get_alpha_beta(A)
-data = utils.get_args_dict(('A', 'b'), (A, b))
+alpha, beta = utils.get_alpha_beta(X_train)
+data = utils.get_args_dict(('X', 'y'), (X_train, y_train))
 parameters = utils.get_args_dict(('alpha', 'beta', 'T'), (alpha, beta, T))
 gd = descent_structure(data, parameters)
 error_fn = utils.get_logist_loss
-norm_fn = utils.get_l1_loss
+norm_fn = utils.get_logist_subgrad
 
 fig1 = plt.figure()
 ax1 = plt.axes()
@@ -40,25 +63,29 @@ fig2 = plt.figure()
 ax2 = plt.axes()
 
 print('========== Starting Experiment ==============')
-for i in range(0, 3):
-    print('iteration: ', str(i))
-    print('------------ Log. Reg. ---------------------')
-    # Logistic Regression using subgradient method
-    x_start = np.random.randn(n,)
-    subgrad_fn = utils.get_logist_subgrad
-    # subgrad_fn = utils.get_l2_subgrad
-    x_sg, error_sg, l1_sg, xs_sg =\
-        gd.descent(subgradient_update, subgrad_fn, error_fn, norm_fn, x_start)
 
-    print('-------- Log. Reg. + Acceleration ----------')
-    # Logistic Regression using accelerated subgradient method
-    x_F, error_F, l1_F, xs_F =\
-        gd.accelerated_descent(accelerated_subgrad_update, subgrad_fn, error_fn, norm_fn, x_start)
+print('------------ Log. Reg. ---------------------')
+# Logistic Regression using subgradient method
+Beta_start = np.random.randn(n, num_c)
+subgrad_fn = utils.get_logist_subgrad
+Beta_sg, error_sg, l1_sg, xs_sg =\
+    gd.descent(subgradient_update, subgrad_fn, error_fn, norm_fn, Beta_start)
+print('preds:')
+print(get_logistic_preds(X_train, Beta_sg))
 
-    ax1.plot(error_sg, label='Subgrad_'+str(i))
-    ax1.plot(error_F, label='Accel. Subgrad_'+str(i))
-    ax2.plot(l1_sg, label='Subgradient_'+str(i))
-    ax2.plot(l1_F, label='Accel. Subgrad_'+str(i))
+print('-------- Log. Reg. + Acceleration ----------')
+# Logistic Regression using accelerated subgradient method
+Beta_acc, error_acc, l1_acc, xs_acc =\
+    gd.accelerated_descent(accelerated_subgrad_update, subgrad_fn, error_fn, norm_fn, Beta_start)
+print('acc preds:')
+print(get_logistic_preds(X_train, Beta_acc))
+
+print('true:')
+print(y_train)
+
+ax1.plot(error_sg, label='Subgrad_')
+ax1.plot(error_acc, label='Accel. Subgrad_')
+
 
 print('========== END ==============')
 # ---------------------------
@@ -66,5 +93,5 @@ print('========== END ==============')
 # ---------------------------
 
 ax1.legend()
-fig1.savefig('p3/train_error.eps')
+fig1.savefig('p4/train_error.eps')
 

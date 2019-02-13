@@ -22,7 +22,7 @@ x_true = np.random.randn(n,)
 b = np.matmul(A, x_true).reshape([-1,])
 
 # ---------------------------
-# Run Descent Algos on LASSO
+# Run Descent Algos on Log. Reg.
 # ---------------------------
 
 # Set up Descent Structure

@@ -1,7 +1,6 @@
 
 import matplotlib.pyplot as plt
 from descent_algos import *
-import utils
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 import sklearn_p4_utils as skutils

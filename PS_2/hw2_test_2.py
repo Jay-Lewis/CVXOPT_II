@@ -4,7 +4,6 @@
 
 
 import numpy as np
-import numpy.random as rn
 import numpy.linalg as la
 import matplotlib.pyplot as plt
 from utils import fuzzy_equal

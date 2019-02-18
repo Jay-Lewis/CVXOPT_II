@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 from descent_algos import *
 import utils
 import pandas as pd
-import random
-
 
 # ==========================================
 # HW 3 (Problem 4)
@@ -18,7 +16,7 @@ np.random.seed(1)
 # Load Data
 # --------------------
 print('============= Loading Data ==============')
-nrows = 7000
+nrows = 2000
 df = pd.read_csv("Bigdata/X_train.csv", header=-1, nrows=nrows)
 df2 = pd.read_csv("Bigdata/y_train.csv", header=-1)
 X_train = df.as_matrix()

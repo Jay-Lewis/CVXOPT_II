@@ -64,6 +64,14 @@ def logist_loss_(Beta, data, params):
 
     return loss
 
+def frobenius_norm(X, data, params):
+
+    return torch.norm(X, p=2)
+
+def nuclear_norm(X, data, params):
+
+    return torch.norm(X, p=1)
+
 # --------------------------
 # Projections
 # --------------------------
@@ -104,7 +112,10 @@ def proj_prob_simp(y, data, params):
 
     return np.reshape(x, [-1,1])
 
+def proj_matrix_sample(X, data, params):
+    O, M_samp = get_args_from_dict(data, ('O', 'M_samp'))
 
+    return X - X*O + M_samp
 
 
 # --------------------------

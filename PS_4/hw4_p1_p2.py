@@ -41,7 +41,7 @@ gd = descent_structure(data, params, loss_fn)
 x_start = Variable(torch.ones(np.shape(X)[1], 1).type(dtype), requires_grad=True)
 norm_fn = None
 subgrad_fn = gd.get_torch_subgrad
-x_pgd, error_pgd, l1_pgd, xs_pgd = gd.descent(project_gradient_update, subgrad_fn, norm_fn, x_start)
+x_pgd, error_pgd, l1_pgd, xs_pgd = gd.descent(project_gradient_update_, subgrad_fn, norm_fn, x_start)
 test_errors_pgd = utils.test_error(xs_pgd, utils.l2_loss_scaled, test_data, params)
 
 print('final estimate:')

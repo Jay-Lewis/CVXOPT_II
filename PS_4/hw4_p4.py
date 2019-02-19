@@ -27,7 +27,6 @@ df = pd.read_csv("digits/X_digits_train.csv", nrows=nrows, header=-1)
 df2 = pd.read_csv("digits/y_digits_train.csv",nrows=nrows, header=-1)
 
 
-
 X_train = torch.Tensor(utils.df_str_to_matrix(df)).type(dtype)
 y_train = torch.Tensor(df2.values).type(dtype2)
 

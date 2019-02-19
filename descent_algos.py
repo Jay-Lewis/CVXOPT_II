@@ -4,10 +4,14 @@ import utils
 import torch
 
 class descent_structure:
-    def __init__(self, data, parameters, loss_fn):
+    def __init__(self, data, parameters, loss_fn, error_fn=None):
         self.data = data
         self.parameters = parameters
         self.loss_fn = loss_fn
+        if error_fn is not None:
+            self.error_fn = error_fn
+        else:
+            self.error_fn = loss_fn
         if 'save_int' in parameters:
             self.save_int = parameters['save_int']
         else:
@@ -32,7 +36,7 @@ class descent_structure:
             # record error and norm (if required)
 
             if (t % self.save_int == 0) or (t == T - 1):
-                error.append(utils.to_numpy(self.loss_fn(x, self.data, self.parameters)))
+                error.append(utils.to_numpy(self.error_fn(x, self.data, self.parameters)))
                 if norm_fn is not None:
                     norm.append(utils.to_numpy(norm_fn(x, self.data, self.parameters)))
                 xs.append(x.data)
@@ -100,13 +104,14 @@ def subgradient_update(x, t, subgradient_fn, data, params):
 
 def project_gradient_update(x, t, subgradient_fn, data, params):
     beta, dtype = utils.get_args_from_dict(params, ('beta', 'dtype'))
-    eta = 1.0 / beta
+    if beta is not None:
+        eta = 1.0 / beta
+    else:
+        eta = 1.0/(t+1)
     project_fn = params['project_fn']
     gradient = subgradient_fn(x, data, params)
-    x = x - gradient*eta
-    x.data = torch.Tensor(project_fn(utils.to_numpy(x), data, params)).type(dtype)
 
-    return x
+    return project_fn(x - gradient*eta, data, params)
 
 def mirror_descent_KL_prob(x, t, subgradient_fn, data, params):
     # With Bregman Divergence = KL_div and set is probability simplex,
@@ -192,3 +197,17 @@ def svrg_update(x, t, subgradient_fn, data, params):
 #
 #     return x_plus, y_plus, None
 
+# ========================
+# Non-core Methods
+# =======================
+
+def project_gradient_update_(x, t, subgradient_fn, data, params):
+    # Modified version for projection function which isn't torch compatabile
+    beta, dtype = utils.get_args_from_dict(params, ('beta', 'dtype'))
+    eta = 1.0 / beta
+    project_fn = params['project_fn']
+    gradient = subgradient_fn(x, data, params)
+    x = x - gradient * eta
+    x.data = torch.Tensor(project_fn(utils.to_numpy(x), data, params)).type(dtype)
+
+    return x

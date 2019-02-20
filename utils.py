@@ -42,10 +42,11 @@ def logist_loss(Beta, data, params):
     b = data['b'].view(-1)
     loss_fn = torch.nn.NLLLoss()
     m = torch.nn.LogSoftmax()
-
+    print(np.shape(A))
+    print(np.shape(Beta))
     loss = loss_fn(m(torch.mm(A, Beta)), b)
     if 'lam' in params:
-     loss += Beta.norm(2)*params['lam']
+        loss += Beta.norm(2)*params['lam']
 
     return loss
 
@@ -70,7 +71,7 @@ def frobenius_norm(X, data, params):
 
 def nuclear_norm(X, data, params):
 
-    return torch.norm(X, p=1)
+    return torch.norm(X, p='nuc')
 
 # --------------------------
 # Projections
@@ -117,6 +118,16 @@ def proj_matrix_sample(X, data, params):
 
     return X - X*O + M_samp
 
+# --------------------------
+# Step Size functions
+# --------------------------
+
+def one_by_t(x, t, data, params):
+    return 1.0/ t
+
+def one_by_sqrt(x, t, data, params):
+    return 1.0/ np.sqrt(t)
+
 
 # --------------------------
 # Helper functions
@@ -157,6 +168,16 @@ def get_alpha_beta(A):
     beta = max(np.abs(s))**2
     return alpha, beta
 
+
+def to_sparse_tensor(coo_mat):
+    values = coo_mat.data
+    indices = np.vstack((coo_mat.row, coo_mat.col))
+
+    i = torch.LongTensor(indices)
+    v = torch.FloatTensor(values)
+    shape = coo_mat.shape
+
+    return torch.sparse.FloatTensor(i, v, torch.Size(shape))
 
 def get_args_from_dict(args_dict, kw_list):
     args = ()

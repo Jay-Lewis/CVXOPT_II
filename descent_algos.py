@@ -17,7 +17,7 @@ class descent_structure:
         else:
             self.save_int = 1
 
-    def descent(self, update_fn, subgrad_fn, norm_fn, x_start):
+    def descent(self, update_fn, subgrad_fn, x_start, norm_fn=None, step_fn=None):
         # Descends using update method "update" for T steps
 
         T = self.parameters['T']
@@ -30,8 +30,9 @@ class descent_structure:
             norm = None
 
         for t in range(T):
+            print(t)
             # update x
-            x.data = update_fn(x, t, subgrad_fn, self.data, self.parameters)
+            x.data = update_fn(x, t+1, subgrad_fn, step_fn, self.data, self.parameters)
 
             # record error and norm (if required)
 
@@ -88,7 +89,7 @@ class descent_structure:
 # Standard Methods
 # ========================
 
-def subgradient_update(x, t, subgradient_fn, data, params):
+def subgradient_update(x, t, subgradient_fn,step_fn, data, params):
     # Updates x using subgradient descent, subgradients from subgradient_fn
 
     if 'c' in params:
@@ -102,18 +103,18 @@ def subgradient_update(x, t, subgradient_fn, data, params):
 
     return x
 
-def project_gradient_update(x, t, subgradient_fn, data, params):
+def project_gradient_update(x, t, subgradient_fn, step_fn, data, params):
     beta, dtype = utils.get_args_from_dict(params, ('beta', 'dtype'))
-    if beta is not None:
+    if step_fn is None:
         eta = 1.0 / beta
     else:
-        eta = 1.0/(t+1)
+        eta = step_fn(x, t, data, params)
     project_fn = params['project_fn']
     gradient = subgradient_fn(x, data, params)
 
     return project_fn(x - gradient*eta, data, params)
 
-def mirror_descent_KL_prob(x, t, subgradient_fn, data, params):
+def mirror_descent_KL_prob(x, t, subgradient_fn, step_fn, data, params):
     # With Bregman Divergence = KL_div and set is probability simplex,
     #  update is normalized exponential gradient
     n_t = 1.0 / params['beta']
@@ -126,7 +127,7 @@ def mirror_descent_KL_prob(x, t, subgradient_fn, data, params):
 # Stochastic  Methods
 # ========================
 
-def data_stoch_sg_update(x, t, subgradient_fn, data, params):
+def data_stoch_sg_update(x, t, subgradient_fn, step_fn, data, params):
     # Updates x using subgradient descent, subgradients from subgradient_fn
     # stochastic in the number of samples used for gradient
 
@@ -145,9 +146,10 @@ def data_stoch_sg_update(x, t, subgradient_fn, data, params):
 
     return x
 
-def svrg_update(x, t, subgradient_fn, data, params):
+def svrg_update(x, t, subgradient_fn, step_fn, data, params):
     # Updates x using svrg descent, subgradients from subgradient_fn
     # stochastic in the number of samples used for gradient
+    t = t-1
     if 'c' in params:
         c = params['c']
         n_t = c / np.sqrt(t + 1)
@@ -158,8 +160,10 @@ def svrg_update(x, t, subgradient_fn, data, params):
     svrg_s = params['svrg_s']
     if t % svrg_s == 0:
         subgrad = subgradient_fn(x, data, params)
-        data['svrg_save'] = x
-        data['svrg_grad_save'] = subgrad
+        data['svrg_save'].data = x.detach()
+        data['svrg_grad_save'] = subgrad.detach()
+    else:
+        y = data['svrg_save']
 
     # Compute stochastic subgradient
     data['A'], indices = utils.sgd_matrix(data['A_save'], None, data, params)
@@ -201,7 +205,7 @@ def svrg_update(x, t, subgradient_fn, data, params):
 # Non-core Methods
 # =======================
 
-def project_gradient_update_(x, t, subgradient_fn, data, params):
+def project_gradient_update_(x, t, subgradient_fn, step_fn, data, params):
     # Modified version for projection function which isn't torch compatabile
     beta, dtype = utils.get_args_from_dict(params, ('beta', 'dtype'))
     eta = 1.0 / beta

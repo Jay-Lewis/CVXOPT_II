@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from descent_algos import *
 import utils
+from utils_ps_4 import *
 from torch.autograd import Variable
 import torch
 import pandas as pd
@@ -20,7 +21,7 @@ np.random.seed(1)
 # Load Data
 # --------------------
 print('============= Loading Data ==============')
-dtype = torch.cuda.FloatTensor
+dtype = torch.FloatTensor   #TODO: torch.cuda.FloatTensor
 df = pd.read_csv("MatrixCompletion/M.csv", header=-1)
 df2 = pd.read_csv("MatrixCompletion/O.csv", header=-1)
 
@@ -29,18 +30,15 @@ O = torch.Tensor(df2.values).type(dtype)
 M_samp = M*O
 
 print('=============  Data Loaded ==============')
-print('M Data:')
-print(M)
-print(M_samp)
 
 # ---------------------------
 # Run Descent Algos on Low-Rank Completion Prob
 # ---------------------------
 
 # Set up Descent Structure
-T = int(1e3)
+T = int(1e3)    #TODO: 3e2
 # alpha, beta = utils.get_alpha_beta(M)
-beta = None
+beta = 1.0
 data = utils.get_args_dict(('O', 'M_samp'),
                            (O, M_samp))
 loss_fn = utils.nuclear_norm
@@ -48,29 +46,50 @@ project_fn = utils.proj_matrix_sample
 params = utils.get_args_dict(('beta', 'T', 'dtype', 'project_fn'), (beta, T, dtype, project_fn))
 gd = descent_structure(data, params, loss_fn)
 
-# Low-Rank Completion PGD
+# ---- Low-Rank Completion PGD (eta = 1.0) -------------
+print('Run 1')
 X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
-print('X_start:')
-print(X_start)
-print(utils.frobenius_norm(X_start-M, None, None)**2)
 subgrad_fn = gd.get_torch_subgrad
-X_gd, error_gd, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, None, X_start)
-diffs = [X_i - M for X_i in Xs_gd]
-errors = utils.test_error(diffs, utils.frobenius_norm, data, params)
-errors = [utils.to_numpy(error)**2 for error in errors]
+step_fn = None
+X_gd, error_gd_1, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+test_errors_1 = p3_error(Xs_gd, M, data, params)
 
-print('final_prediction:')
-print(X_gd)
-print(utils.frobenius_norm(X_gd-M, None, None)**2)
-print(X_gd-M)
+# ---- Low-Rank Completion PGD (eta = 1/t) -------------
+print('Run 2')
+X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
+step_fn = utils.one_by_t
+X_gd, error_gd_2, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+test_errors_2 = p3_error(Xs_gd, M, data, params)
+
+# ---- Low-Rank Completion PGD (eta = 1/sqrt(t)) -------------
+print('Run 3')
+X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
+step_fn = utils.one_by_sqrt
+X_gd, error_gd_3, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+test_errors_3 = p3_error(Xs_gd, M, data, params)
+
+
 # ---------------------------
 # Plots + Save
 # ---------------------------
 
 plt.clf()
 fig, ax = plt.subplots()
-plt.plot(errors, label='Project. GD')
+plt.plot(error_gd_1, label='PGD 1.0')
+plt.plot(error_gd_2, label='PGD 1/t')
+plt.plot(error_gd_3, label='PGD 1/sqrt(t)')
 plt.title('Training Error')
 plt.legend()
+plt.ylabel('Nuclear Norm (X)')
 plt.savefig('p3/train_error.pdf')
+
+plt.clf()
+fig, ax = plt.subplots()
+plt.plot(test_errors_1, label='PGD 1.0')
+plt.plot(test_errors_2, label='PGD 1/t')
+plt.plot(test_errors_3, label='PGD 1/sqrt(t)')
+plt.title('Test Error')
+plt.ylabel('Frobenius Norm (X-M)')
+plt.legend()
+plt.savefig('p3/test_error.pdf')
 

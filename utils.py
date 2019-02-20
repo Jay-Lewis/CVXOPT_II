@@ -42,8 +42,6 @@ def logist_loss(Beta, data, params):
     b = data['b'].view(-1)
     loss_fn = torch.nn.NLLLoss()
     m = torch.nn.LogSoftmax()
-    print(np.shape(A))
-    print(np.shape(Beta))
     loss = loss_fn(m(torch.mm(A, Beta)), b)
     if 'lam' in params:
         loss += Beta.norm(2)*params['lam']
@@ -72,6 +70,10 @@ def frobenius_norm(X, data, params):
 def nuclear_norm(X, data, params):
 
     return torch.norm(X, p='nuc')
+
+def matrix_rank(X, data, parms):
+
+    return np.linalg.matrix_rank(to_numpy(X))
 
 # --------------------------
 # Projections

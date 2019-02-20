@@ -7,3 +7,5 @@ PS_3/__pycache__/
 .idea/
 
 Bigdata/
+
+*.ipynb_checkpoints/

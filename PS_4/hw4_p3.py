@@ -29,6 +29,8 @@ M = torch.Tensor(df.values).type(dtype)
 O = torch.Tensor(df2.values).type(dtype)
 M_samp = M*O
 
+print('RANK:', np.linalg.matrix_rank(utils.to_numpy(M)))
+
 print('=============  Data Loaded ==============')
 
 # ---------------------------
@@ -36,7 +38,7 @@ print('=============  Data Loaded ==============')
 # ---------------------------
 
 # Set up Descent Structure
-T = int(1e3)    #TODO: 3e2
+T = int(1e3)
 # alpha, beta = utils.get_alpha_beta(M)
 beta = 1.0
 data = utils.get_args_dict(('O', 'M_samp'),
@@ -51,21 +53,26 @@ print('Run 1')
 X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
 subgrad_fn = gd.get_torch_subgrad
 step_fn = None
-X_gd, error_gd_1, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+norm_fn = utils.matrix_rank
+X_gd, error_gd_1, ranks, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, norm_fn, step_fn)
 test_errors_1 = p3_error(Xs_gd, M, data, params)
 
 # ---- Low-Rank Completion PGD (eta = 1/t) -------------
 print('Run 2')
 X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
-step_fn = utils.one_by_t
-X_gd, error_gd_2, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+step_fn = utils.one_by_sqrt
+subgrad_fn = gd.get_torch_subgrad
+norm_fn = utils.matrix_rank
+X_gd, error_gd_2, ranks, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, norm_fn, step_fn)
 test_errors_2 = p3_error(Xs_gd, M, data, params)
 
 # ---- Low-Rank Completion PGD (eta = 1/sqrt(t)) -------------
 print('Run 3')
 X_start = Variable(torch.zeros(np.shape(M)).type(dtype), requires_grad=True)
 step_fn = utils.one_by_sqrt
-X_gd, error_gd_3, _, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, None, step_fn)
+subgrad_fn = gd.get_torch_subgrad
+norm_fn = utils.matrix_rank
+X_gd, error_gd_3, ranks, Xs_gd = gd.descent(project_gradient_update, subgrad_fn, X_start, norm_fn, step_fn)
 test_errors_3 = p3_error(Xs_gd, M, data, params)
 
 

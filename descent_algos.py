@@ -25,7 +25,7 @@ class descent_structure:
         xs = []
         error = []
         if norm_fn is not None:
-            norm = [utils.to_numpy(norm_fn(x, self.data, self.parameters))]
+            norm = [norm_fn(x, self.data, self.parameters)]
         else:
             norm = None
 
@@ -39,7 +39,7 @@ class descent_structure:
             if (t % self.save_int == 0) or (t == T - 1):
                 error.append(utils.to_numpy(self.error_fn(x, self.data, self.parameters)))
                 if norm_fn is not None:
-                    norm.append(utils.to_numpy(norm_fn(x, self.data, self.parameters)))
+                    norm.append(norm_fn(x, self.data, self.parameters))
                 xs.append(x.data)
                 assert not np.isnan(error[-1])
 

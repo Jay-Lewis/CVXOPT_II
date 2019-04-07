@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
-from descent_algos import *
-import utils
-
+from ProblemSets.descent_algos import *
+from ProblemSets import utils
 
 # ==========================================
 # HW 3 (Problem 3)

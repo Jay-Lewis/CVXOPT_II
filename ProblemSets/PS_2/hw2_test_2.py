@@ -6,7 +6,7 @@
 import numpy as np
 import numpy.linalg as la
 import matplotlib.pyplot as plt
-from utils import fuzzy_equal
+from ProblemSets.utils import fuzzy_equal
 
 # TODO: REMOVE THIS----------------------
 from sklearn.linear_model import Lasso

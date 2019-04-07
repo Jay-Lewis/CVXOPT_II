@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.linalg as la
-from utils import *
+from ProblemSets.utils import *
 
 class descent_structure:
     def __init__(self, data, parameters):

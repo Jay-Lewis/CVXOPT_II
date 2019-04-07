@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
-from descent_algos import *
-import utils
-from utils_ps_4 import *
+from ProblemSets.descent_algos import *
+from ProblemSets.utils_ps_4 import *
 from torch.autograd import Variable
 import torch
 import pandas as pd

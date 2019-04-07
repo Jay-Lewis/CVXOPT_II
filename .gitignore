@@ -1,11 +1,3 @@
-*.pyc
-*.xml
 
-PS_2/__pycache__/
-PS_3/__pycache__/
-
+# Pycharm Stuff
 .idea/
-
-Bigdata/
-
-*.ipynb_checkpoints/

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from descent_algos import *
-import utils
+from ProblemSets.descent_algos import *
+from ProblemSets import utils
 from torch.autograd import Variable
 import torch
 
@@ -33,7 +33,7 @@ data = utils.get_args_dict(('A', 'b'), (X, y_corr))
 test_data = utils.get_args_dict(('A', 'b'), (X, y))
 loss_fn = utils.l1_loss_scaled
 project_fn = utils.proj_prob_simp
-params = utils.get_args_dict(('beta', 'lam', 'T', 'c', 'project_fn', 'dtype'), (1000*beta, 10.0, T, 1e-5, project_fn, dtype))
+params = utils.get_args_dict(('beta', 'lam', 'T', 'c', 'project_fn', 'dtype'), (1000 * beta, 10.0, T, 1e-5, project_fn, dtype))
 gd = descent_structure(data, params, loss_fn)
 
 

@@ -1,6 +1,5 @@
 import numpy as np
-import numpy.linalg as la
-import utils
+from ProblemSets import utils
 import torch
 
 class descent_structure:

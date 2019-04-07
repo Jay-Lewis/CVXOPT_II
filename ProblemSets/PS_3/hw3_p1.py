@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from descent_algos import *
-import utils
+from ProblemSets.descent_algos import *
+from ProblemSets import utils
 
 # def frank_wolfe_update(x, A, b, t, gam, c):
 #     # Updates x using Frank-Wolfe method for loss ==> (1/2)*||Ax-b||_2^2
